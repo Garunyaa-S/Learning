@@ -1,12 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, ObjectId } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 export type SessionDocument = HydratedDocument<Session>;
 
 @Schema({ versionKey: false })
 export class Session {
-    @Prop({ required: true, ref: 'Admin' })
-    user_id: ObjectId;
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Admin' })
+    user_id: Types.ObjectId;
 
     @Prop({ required: true })
     session_token: string;

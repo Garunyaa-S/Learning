@@ -1,18 +1,18 @@
-import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, ObjectId } from 'mongoose';
 import { Admin } from './models/admin.model';
+import { Session } from './models/session.model';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { LoginAdminDto } from './validations/login.admin.validator';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService implements OnModuleInit {
   constructor(
     @InjectModel(Admin.name) private adminModel: Model<Admin>,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private sessionService: SessionService
+    @InjectModel(Session.name) private sessionModel: Model<Session>,
+    private configService: ConfigService
   ) { }
 
   async onModuleInit() {
@@ -37,22 +37,17 @@ export class AdminService implements OnModuleInit {
     }
   }
 
-  async login(email: string, password: string): Promise<{ token: string }> {
-    const admin = await this.adminModel.findOne({ email });
-    if (!admin) {
-      throw new UnauthorizedException('Invalid email');
-    }
+  // Login admin
+  async login(email: string, loginAdminDto: LoginAdminDto): Promise<Admin> {
+    return this.adminModel.findOne({ email });
+  }
 
-    const passwordMatch = await bcrypt.compare(password, admin.password);
-    if (!passwordMatch) {
-      throw new UnauthorizedException('Invalid password');
-    }
-
-    const payload = { email: admin.email, sub: admin._id };
-    const token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET')
+  // Create session
+  async createSession(user_id: ObjectId, session_token: string): Promise<Session> {
+    const newSession = new this.sessionModel({
+      user_id,
+      session_token
     });
-
-    return { token };
+    return newSession.save();
   }
 }
